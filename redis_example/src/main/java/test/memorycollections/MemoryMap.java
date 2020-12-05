@@ -196,7 +196,8 @@ public class MemoryMap implements Map<String, Integer> {
         } catch (ClassCastException e){
             throw new ClassCastException();
         } catch (NullPointerException e){
-            throw new NullPointerException();
+
+            throw new IllegalArgumentException();
         } catch (IllegalArgumentException e){
             throw new IllegalArgumentException();
         }
