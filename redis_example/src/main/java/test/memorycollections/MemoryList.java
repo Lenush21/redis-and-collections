@@ -3,6 +3,8 @@ package test.memorycollections;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ListIterator;
 import redis.clients.jedis.Jedis;
 import java.util.Objects;
@@ -43,23 +45,24 @@ public class MemoryList implements List<String> {
     @Override
     public void add(int index, String element) {
         String ind;
+
         try {
             ind = String.valueOf(index);
         } catch (ClassCastException e) {
             throw new ClassCastException();
         }
+
+        if (index > lasIndex) {
+            throw new IndexOutOfBoundsException();
+        }
         try {
-            if (index > lasIndex) {
-                throw new IndexOutOfBoundsException();
-            }
             jedis.set(ind, element);
         } catch (NullPointerException e) {
             throw new NullPointerException();
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException();
-        } catch (IndexOutOfBoundsException e) {
-            throw new IndexOutOfBoundsException();
         }
+
         lasIndex++;
     }
 
@@ -94,13 +97,14 @@ public class MemoryList implements List<String> {
     @Override
     public String remove(int index) {
         String elem;
+        if (index < 0 || index > (size() - 1)) {
+            throw new IndexOutOfBoundsException();
+        }
+        elem = get(index);
         try {
-            elem = get(index);
             jedis.del(String.valueOf(index));
         } catch (UnsupportedOperationException e) {
             throw new UnsupportedOperationException();
-        } catch (IndexOutOfBoundsException e) {
-            throw new IndexOutOfBoundsException();
         }
         lasIndex--;
         return elem;
@@ -198,6 +202,7 @@ public class MemoryList implements List<String> {
             if (this.contains(o)) {
                 try {
                     jedis.del(objectString);
+                    lasIndex--;
                 } catch (NullPointerException ex) {
                     throw new NullPointerException();
                 } catch (UnsupportedOperationException ex) {
@@ -211,68 +216,241 @@ public class MemoryList implements List<String> {
 
     @Override
     public boolean addAll(Collection<? extends String> c) {
-        // TODO Auto-generated method stub
+        for (String s : c) {
+            if (!this.contains(s)) {
+                this.add(s);
+                lasIndex++;
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public boolean addAll(int index, Collection<? extends String> c) {
-        // TODO Auto-generated method stub
-        return false;
+        if (c == null || c.isEmpty()) {
+            return false;
+        }
+        if (index < 0 || index > (c.size() - 1)) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        int i = 0;
+        boolean collectionChanged = false;
+        for (Iterator<? extends String> iter = c.iterator(); iter.hasNext(); ++i) {
+            String elem = iter.next();
+            if (i >= index) {
+                collectionChanged = true;
+                add(elem);
+                lasIndex++;
+            }
+        }
+        return collectionChanged;
     }
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        // TODO Auto-generated method stub
-        return false;
+        Iterator<?> e = c.iterator();
+        while (e.hasNext())
+            if (!contains(e.next()))
+                return false;
+        return true;
+        // return false;
     }
 
     @Override
     public ListIterator<String> listIterator() {
-        // TODO Auto-generated method stub
-        return null;
+        ListIterator<String> it = new ListIterator<String>() {
+
+            private int currentIndex = 0;
+            private int lastRet = -1;
+            private Jedis j = jedis;
+
+            @Override
+            public boolean hasNext() {
+                return  currentIndex<size();
+            }
+
+            public String next() {
+                lastRet++;
+                return get(currentIndex++);
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return lastRet != -1;
+            }
+
+            @Override
+            public String previous() {
+                lastRet--;
+                return get(--currentIndex);
+            }
+
+            @Override
+            public void add(String e) {
+                String currentIndexString = String.valueOf(currentIndex++);
+                j.set(currentIndexString, e);
+        
+            }
+
+            @Override
+            public void remove() {
+                j.del(get(currentIndex));
+                currentIndex--;
+            }
+
+            @Override
+            public void set(String e) {
+                String currentIndexString = String.valueOf(currentIndex);
+                j.set(currentIndexString, e);
+
+            }
+
+            @Override
+            public int nextIndex() { 
+                return currentIndex+1;
+            }
+
+            @Override
+            public int previousIndex() {
+                return currentIndex-1;
+            }
+
+        };
+        return it;
     }
 
     @Override
     public ListIterator<String> listIterator(int index) {
-        // TODO Auto-generated method stub
-        return null;
+        ListIterator<String> it = new ListIterator<String>() {
+
+            private int currentIndex = index;
+            private int lastRet = index - 1;
+            private Jedis j = jedis;
+
+            @Override
+            public boolean hasNext() {
+                return  currentIndex<size();
+            }
+
+            public String next() {
+                lastRet++;
+                return get(currentIndex++);
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return lastRet != -1;
+            }
+
+            @Override
+            public String previous() {
+                lastRet--;
+                return get(--currentIndex);
+            }
+
+            @Override
+            public void add(String e) {
+                String currentIndexString = String.valueOf(currentIndex++);
+                j.set(currentIndexString, e);
+
+            }
+
+            @Override
+            public void set(String e) {
+                String currentIndexString = String.valueOf(currentIndex);
+                j.set(currentIndexString, e);
+
+            }
+
+            @Override
+            public int nextIndex() { 
+                return currentIndex+1;
+            }
+
+            @Override
+            public int previousIndex() {
+                return currentIndex-1;
+            }
+
+            @Override
+            public void remove() {
+                j.del(get(currentIndex));
+
+            }
+
+        };
+            
+        return it;
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        // TODO Auto-generated method stub
+        for (Iterator<?> i = c.iterator(); i.hasNext();) {
+            if (this.contains(i.next())) {
+                this.remove(i);
+                lasIndex--;
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        // TODO Auto-generated method stub
+        for (int i = 0; i < size(); i++) {
+            if (!c.contains(get(i))) {
+                remove(i);
+                lasIndex--;
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public String set(int index, String element) {
-        // TODO Auto-generated method stub
-        return null;
+        if (index < 0 || index > (size() - 1)) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        String indexString = String.valueOf(index);
+        String prevElement = jedis.get(indexString);
+        jedis.set(indexString, element);
+        return prevElement;
     }
 
     @Override
     public List<String> subList(int fromIndex, int toIndex) {
-        // TODO Auto-generated method stub
-        return null;
+        List<String> list = new ArrayList<String>();
+        if (fromIndex < 0 || toIndex > (size() - 1)) {
+            throw new IndexOutOfBoundsException();
+        }
+        for (int i = fromIndex; i < size(); i++){
+            list.add(get(i));
+            if (i == toIndex)
+                break;
+        }  
+        return list;
     }
 
     @Override
     public Object[] toArray() {
-        // TODO Auto-generated method stub
-        return null;
+        Object[] objs = new Object[size()];
+        for (int i = 0; i < size(); i++){
+            objs[i] = get(i);
+        }
+        return objs;
     }
 
     @Override
     public <T> T[] toArray(T[] a) {
-        // TODO Auto-generated method stub
-        return null;
+        Object[] original = toArray();
+        T[] result = Arrays.copyOf(a, original.length);
+        for(int i = 0; i < original.length; i++){
+            result[i] = (T)original[i];
+            }
+            return result;
     }
-
 }
