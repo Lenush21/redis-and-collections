@@ -268,7 +268,7 @@ public class MemoryList implements List<String> {
 
             @Override
             public boolean hasNext() {
-                return  currentIndex<size();
+                return currentIndex < size();
             }
 
             public String next() {
@@ -291,7 +291,7 @@ public class MemoryList implements List<String> {
             public void add(String e) {
                 String currentIndexString = String.valueOf(currentIndex++);
                 j.set(currentIndexString, e);
-        
+
             }
 
             @Override
@@ -308,13 +308,13 @@ public class MemoryList implements List<String> {
             }
 
             @Override
-            public int nextIndex() { 
-                return currentIndex+1;
+            public int nextIndex() {
+                return currentIndex + 1;
             }
 
             @Override
             public int previousIndex() {
-                return currentIndex-1;
+                return currentIndex - 1;
             }
 
         };
@@ -331,7 +331,7 @@ public class MemoryList implements List<String> {
 
             @Override
             public boolean hasNext() {
-                return  currentIndex<size();
+                return currentIndex < size();
             }
 
             public String next() {
@@ -365,13 +365,13 @@ public class MemoryList implements List<String> {
             }
 
             @Override
-            public int nextIndex() { 
-                return currentIndex+1;
+            public int nextIndex() {
+                return currentIndex + 1;
             }
 
             @Override
             public int previousIndex() {
-                return currentIndex-1;
+                return currentIndex - 1;
             }
 
             @Override
@@ -381,7 +381,7 @@ public class MemoryList implements List<String> {
             }
 
         };
-            
+
         return it;
     }
 
@@ -427,18 +427,18 @@ public class MemoryList implements List<String> {
         if (fromIndex < 0 || toIndex > (size() - 1)) {
             throw new IndexOutOfBoundsException();
         }
-        for (int i = fromIndex; i < size(); i++){
+        for (int i = fromIndex; i < size(); i++) {
             list.add(get(i));
             if (i == toIndex)
                 break;
-        }  
+        }
         return list;
     }
 
     @Override
     public Object[] toArray() {
         Object[] objs = new Object[size()];
-        for (int i = 0; i < size(); i++){
+        for (int i = 0; i < size(); i++) {
             objs[i] = get(i);
         }
         return objs;
@@ -448,9 +448,9 @@ public class MemoryList implements List<String> {
     public <T> T[] toArray(T[] a) {
         Object[] original = toArray();
         T[] result = Arrays.copyOf(a, original.length);
-        for(int i = 0; i < original.length; i++){
-            result[i] = (T)original[i];
-            }
-            return result;
+        for (int i = 0; i < original.length; i++) {
+            result[i] = (T) original[i];
+        }
+        return result;
     }
 }
