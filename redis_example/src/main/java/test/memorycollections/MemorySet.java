@@ -1,7 +1,6 @@
 package test.memorycollections;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Arrays;
@@ -45,9 +44,13 @@ public class MemorySet implements Set<String> {
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        //Iterator<String> iter = this.iterator();
-        
-        return false;
+        Iterator<?> iter = c.iterator();
+        while (iter.hasNext()){
+            if (!jedis.exists(String.valueOf(iter.next()))){
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -67,7 +70,6 @@ public class MemorySet implements Set<String> {
     }
     
 
-
     @Override
     public void clear() {
         jedis.flushDB();
@@ -75,20 +77,35 @@ public class MemorySet implements Set<String> {
 
     @Override
     public boolean remove(Object o) {
-        // TODO Auto-generated method stub
+        if (this.contains(o)){
+            jedis.del(String.valueOf(o));
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        // TODO Auto-generated method stub
-        return false;
+        boolean flag = false;
+        for (Iterator<?> i = c.iterator(); i.hasNext();) {
+            if (this.contains(i.next())) {
+                jedis.del(String.valueOf(i.next()));
+                flag = true;
+            }
+        }
+        return flag;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        // TODO Auto-generated method stub
-        return false;
+        boolean flag = false;
+        for (int i = 0; i < size(); i++) {
+            if (!c.contains(jedis.get(String.valueOf(i)))) {
+                jedis.del(String.valueOf(i));
+                flag = true;
+            }
+        }
+        return flag;
     }
 
     @Override
@@ -107,8 +124,11 @@ public class MemorySet implements Set<String> {
 
     @Override
     public Object[] toArray() {
-        // TODO Auto-generated method stub
-        return null;
+        Object[] objs = new Object[size()];
+        for (int i = 0; i < size(); i++) {
+            objs[i] = jedis.get(String.valueOf(i));
+        }
+        return objs;
     }
 
     @Override

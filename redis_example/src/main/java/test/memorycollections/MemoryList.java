@@ -252,8 +252,9 @@ public class MemoryList implements List<String> {
     public boolean containsAll(Collection<?> c) {
         Iterator<?> e = c.iterator();
         while (e.hasNext())
-            if (!contains(e.next()))
+            if (!jedis.exists(String.valueOf(e.next()))){
                 return false;
+            }
         return true;
         // return false;
     }
@@ -387,26 +388,28 @@ public class MemoryList implements List<String> {
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        for (Iterator<?> i = c.iterator(); i.hasNext();) {
-            if (this.contains(i.next())) {
-                this.remove(i);
-                lasIndex--;
-                return true;
+        List list = (List)c;
+        boolean flag = false;
+        for (int i = c.size() - 1; i >= 0; i--){
+            if (this.contains(list.get(i))){
+                jedis.del(String.valueOf(i));
+                flag = true;
             }
-        }
-        return false;
+        } 
+        return flag;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
+        boolean flag = false;
         for (int i = 0; i < size(); i++) {
             if (!c.contains(get(i))) {
                 remove(i);
                 lasIndex--;
-                return true;
+                flag = true;
             }
         }
-        return false;
+        return flag;
     }
 
     @Override
