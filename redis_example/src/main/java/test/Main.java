@@ -2,12 +2,33 @@ package test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
+
+import org.javatuples.Pair;
+
+import test.memorycollections.ConnectionProvider;
 import test.memorycollections.MemoryList;
 import test.memorycollections.MemoryMap;
 
+
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        List<Pair<String, Integer>> list = new ArrayList<Pair<String, Integer>>();
+        list.add(new Pair<String, Integer>("192.168.109.113", 8091));
+        list.add(new Pair<String, Integer>("192.168.109.113", 7778));
+        list.add(new Pair<String, Integer>("192.168.109.113", 7780));
+        list.add(new Pair<String, Integer>("192.168.109.113", 7779));
+        ConnectionProvider cp = new ConnectionProvider(list);
+        // for (int i = 0; i < list.size(); i++) {
+        //         var r = cp.getHost();
+        //         r.append("key", "value");
+        //         r.close();
+        // }
+        cp.init(list);
+
+
+
         // MemoryMap memoryMap = new MemoryMap();
         // MemoryMap map = new MemoryMap();
 

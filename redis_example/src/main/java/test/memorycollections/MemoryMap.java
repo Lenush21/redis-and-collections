@@ -31,6 +31,10 @@ public class MemoryMap implements Map<String, Integer> {
         jedis.close();
     }
 
+    public MemoryMap(){
+        
+    }
+
     @Override
     public int size() {
         return jedis.dbSize().intValue();
