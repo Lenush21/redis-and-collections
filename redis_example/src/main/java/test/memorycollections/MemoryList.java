@@ -45,29 +45,32 @@ public class MemoryList implements List<String> {
     @Override
     public void add(int index, String element) {
         String ind;
-
+        if (index > lasIndex) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (element == null) {
+            throw new NullPointerException();
+        }
+        if (!(element instanceof String)) {
+            throw new IllegalArgumentException();
+        }
         try {
             ind = String.valueOf(index);
         } catch (ClassCastException e) {
             throw new ClassCastException();
         }
-
-        if (index > lasIndex) {
-            throw new IndexOutOfBoundsException();
-        }
-        try {
-            jedis.set(ind, element);
-        } catch (NullPointerException e) {
-            throw new NullPointerException();
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException();
-        }
-
+        jedis.set(ind, element);
         lasIndex++;
     }
 
     @Override
     public boolean add(String e) {
+        if (e == null) {
+            throw new NullPointerException();
+        }
+        if (!(e instanceof String)) {
+            throw new IllegalArgumentException();
+        }
         String sizeString;
         if (!this.contains(e)) {
             try {
@@ -75,12 +78,6 @@ public class MemoryList implements List<String> {
                 jedis.set(sizeString, e);
                 lasIndex++;
                 return true;
-            } catch (NullPointerException ex) {
-                throw new NullPointerException();
-            } catch (IllegalArgumentException ex) {
-                throw ex;
-            } catch (IndexOutOfBoundsException ex) {
-                throw new IndexOutOfBoundsException();
             } catch (ClassCastException ex) {
                 throw new ClassCastException();
             }
@@ -90,6 +87,9 @@ public class MemoryList implements List<String> {
 
     @Override
     public String get(int index) {
+        if (index < 0 || index > (this.size() - 1)) {
+            throw new IndexOutOfBoundsException();
+        }
         String stringIndex = String.valueOf(index);
         return jedis.get(stringIndex);
     }
@@ -101,17 +101,16 @@ public class MemoryList implements List<String> {
             throw new IndexOutOfBoundsException();
         }
         elem = get(index);
-        try {
-            jedis.del(String.valueOf(index));
-        } catch (UnsupportedOperationException e) {
-            throw new UnsupportedOperationException();
-        }
+        jedis.del(String.valueOf(index));
         lasIndex--;
         return elem;
     }
 
     @Override
     public boolean contains(Object o) {
+        if (o == null) {
+            throw new NullPointerException();
+        }
         for (int i = 0; i < size(); i++) {
             try {
                 if (o.equals(get(i))) {
@@ -119,8 +118,6 @@ public class MemoryList implements List<String> {
                 }
             } catch (ClassCastException e) {
                 throw new ClassCastException();
-            } catch (NullPointerException e) {
-                throw new NullPointerException();
             }
         }
         return false;
@@ -149,6 +146,9 @@ public class MemoryList implements List<String> {
 
     @Override
     public int indexOf(Object o) {
+        if (o == null) {
+            throw new NullPointerException();
+        }
         for (int i = 0; i < size(); i++) {
             if (o.equals(get(i))) {
                 return i;
@@ -182,7 +182,10 @@ public class MemoryList implements List<String> {
 
     @Override
     public int lastIndexOf(Object o) {
-        for (int i = size(); i >= 0; i--) {
+        if (o == null) {
+            throw new NullPointerException();
+        }
+        for (int i = size() -1; i >= 0; i--) {
             if (o.equals(get(i))) {
                 return i;
             }
@@ -193,6 +196,9 @@ public class MemoryList implements List<String> {
     @Override
     public boolean remove(Object o) {
         String objectString;
+        if (o == null) {
+            throw new NullPointerException();
+        }
         try {
             objectString = String.valueOf(indexOf(o));
         } catch (ClassCastException e) {
@@ -200,14 +206,8 @@ public class MemoryList implements List<String> {
         }
         for (int i = 0; i < size(); i++) {
             if (this.contains(o)) {
-                try {
-                    jedis.del(objectString);
-                    lasIndex--;
-                } catch (NullPointerException ex) {
-                    throw new NullPointerException();
-                } catch (UnsupportedOperationException ex) {
-                    throw new UnsupportedOperationException();
-                }
+                jedis.del(objectString);
+                lasIndex--;
                 return true;
             }
         }
@@ -216,14 +216,18 @@ public class MemoryList implements List<String> {
 
     @Override
     public boolean addAll(Collection<? extends String> c) {
+        boolean flag = false;
         for (String s : c) {
             if (!this.contains(s)) {
+                if (c.size() == 0) {
+                    throw new NullPointerException();
+                }
                 this.add(s);
                 lasIndex++;
-                return true;
+                flag = true;
             }
         }
-        return false;
+        return flag;
     }
 
     @Override
@@ -251,12 +255,16 @@ public class MemoryList implements List<String> {
     @Override
     public boolean containsAll(Collection<?> c) {
         Iterator<?> e = c.iterator();
-        while (e.hasNext())
-            if (!jedis.exists(String.valueOf(e.next()))){
-                return false;
+        boolean flag = false;
+        while (e.hasNext()) {
+            if (e.next() == null) {
+                throw new NullPointerException();
             }
-        return true;
-        // return false;
+            if (!jedis.exists(String.valueOf(e.next()))) {
+                flag = true;
+            }
+        }
+        return flag;
     }
 
     @Override
@@ -388,20 +396,26 @@ public class MemoryList implements List<String> {
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        List list = (List)c;
+        if (c.size() == 0) {
+            throw new NullPointerException();
+        }
+        List list = (List) c;
         boolean flag = false;
-        for (int i = c.size() - 1; i >= 0; i--){
-            if (this.contains(list.get(i))){
+        for (int i = c.size() - 1; i >= 0; i--) {
+            if (this.contains(list.get(i))) {
                 jedis.del(String.valueOf(i));
                 flag = true;
             }
-        } 
+        }
         return flag;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
         boolean flag = false;
+        if (c.size() == 0) {
+            throw new NullPointerException();
+        }
         for (int i = 0; i < size(); i++) {
             if (!c.contains(get(i))) {
                 remove(i);
@@ -416,6 +430,12 @@ public class MemoryList implements List<String> {
     public String set(int index, String element) {
         if (index < 0 || index > (size() - 1)) {
             throw new IndexOutOfBoundsException();
+        }
+        if (element == null) {
+            throw new NullPointerException();
+        }
+        if (!(element instanceof String)) {
+            throw new IllegalArgumentException();
         }
 
         String indexString = String.valueOf(index);
@@ -449,11 +469,15 @@ public class MemoryList implements List<String> {
 
     @Override
     public <T> T[] toArray(T[] a) {
-        Object[] original = toArray();
-        T[] result = Arrays.copyOf(a, original.length);
-        for (int i = 0; i < original.length; i++) {
-            result[i] = (T) original[i];
+        if (a.length == 0) {
+            throw new NullPointerException();
         }
-        return result;
+        var i = 0;
+        for (String s : this) {
+            a[i] = (T)jedis.get(String.valueOf(indexOf(s)));
+            if(i++ == a.length -1)
+                return a;
+        }
+        return a;
     }
 }
